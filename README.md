@@ -19,3 +19,4 @@ For more instructions and a running demo, see [piston-doom](https://github.com/L
 TODO:
 
 - Setting `myargv` and `myargc` to support the `-iwad`-flag: You need to the file named in a default way for now. The console will show you all the names
+- Support other resolutions. Not sure if this is possible without forking doomgeneric.

@@ -1,4 +1,4 @@
-# doomgeneric-rust
+# doomgeneric-rs
 
 This was primarily a test whether a doom port could be integrated into rust without much hassle (to later integrate with another platform).
 

@@ -1,12 +1,18 @@
 [package]
 name = "doomgeneric"
-version = "0.2.0"
+version = "0.3.0-beta.1"
 edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+description = "Bindings for the doomgeneric doom port."
+authors = ["Linus <linus@cosmos-ink.net"]
+license = "GPL-2.0-only"
+readme = "README.md"
+repository = "https://github.com/LinusCDE/doomgeneric-rs"
+homepage = "https://crates.io/crates/doomgeneric"
+categories = [ "external-ffi-bindings", "rendering" ]
+keywords = [ "doom", "ffi", "game" ]
 
 [dependencies]
-lazy_static = "1.4"
+once_cell = "1"
 
 [build-dependencies]
 cc = "1.0"

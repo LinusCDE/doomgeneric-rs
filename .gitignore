@@ -1,9 +1,8 @@
+# Common IDEs and Editors
+.vscode
+*.iml
+.idea
+
+# Rust specific
 /target
 /Cargo.lock
-
-# Dooms assets (you need to provide at least one of those in your working directory)
-/DOOM1.WAD
-/doom.wad
-
-# Doom savestate
-/.savegame

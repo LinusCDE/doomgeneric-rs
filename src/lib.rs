@@ -6,4 +6,5 @@
 //! If you need this in a multithreaded environment, it's probably best to start this
 //! in a seperate thread and communicate using channels.
 
-pub mod doom;
+pub mod game;
+pub mod input;

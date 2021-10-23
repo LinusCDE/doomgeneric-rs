@@ -20,6 +20,8 @@ pub trait DoomGeneric {
 extern "C" {
     fn D_DoomMain(); // doomgeneric.h
     fn M_FindResponseFile(); // used in main of i_main.c
+    pub static mut myargc: raw::c_int;
+    pub static mut myargv: *mut *mut raw::c_char;
 }
 
 #[no_mangle]
@@ -31,8 +33,6 @@ static START_TIME: Lazy<Instant> = Lazy::new(|| Instant::now());
 
 #[no_mangle]
 extern "C" fn DG_Init() {
-    println!("Passed millis: {}", DG_GetTicksMs());
-
     unsafe {
         *SCREEN_BUFFER.get_mut() = Some(Box::new([0u32; DOOMGENERIC_RESX * DOOMGENERIC_RESY]));
         // Setting DG_ScreenBuffer to where the new buffer is

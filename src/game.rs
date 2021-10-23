@@ -9,7 +9,7 @@ use std::time::{Duration, Instant};
 
 /// The resolution is hardcoded in the underlying library as macro definitions.
 pub const DOOMGENERIC_RESX: usize = 640;
-pub const DOOMGENERIC_RESY: usize = 480;
+pub const DOOMGENERIC_RESY: usize = 400;
 
 pub trait DoomGeneric {
     fn draw_frame(&mut self, screen_buffer: &[u32], xres: usize, yres: usize);

@@ -1,5 +1,7 @@
 # doomgeneric-rs
 
+[![cratesio](https://img.shields.io/crates/v/doomgeneric)](https://crates.io/crates/doomgeneric)
+
 This was primarily a test whether a doom port could be integrated into rust without much hassle (to later integrate with another platform).
 
 The awesome doom port [doomgeneric](https://github.com/ozkl/doomgeneric) was used as a basis.

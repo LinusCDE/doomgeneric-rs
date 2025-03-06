@@ -17,8 +17,11 @@ pub trait DoomGeneric {
     fn set_window_title(&mut self, title: &str);
 }
 
+// TODO: Migrate to doomgeneric_Create
+
 extern "C" {
     fn D_DoomMain(); // doomgeneric.h
+    fn doomgeneric_Tick(); // doomgeneric.h
     fn M_FindResponseFile(); // used in main of i_main.c
     pub static mut myargc: raw::c_int;
     pub static mut myargv: *mut *mut raw::c_char;
@@ -95,5 +98,11 @@ pub fn init(doom_impl: impl DoomGeneric + 'static) {
         M_FindResponseFile();
         DG_Init();
         D_DoomMain();
+    }
+}
+
+pub fn tick() {
+    unsafe {
+        doomgeneric_Tick();
     }
 }

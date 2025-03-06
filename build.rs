@@ -8,7 +8,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for entry in std::fs::read_dir(dg_src_dir)? {
         let entry = entry?;
         if let Some(filename) = entry.file_name().to_str() {
-            if filename.starts_with("doomgeneric") || filename == "i_main.c" {
+            if filename.starts_with("doomgeneric")
+                || filename.contains("_allegro")
+                || filename.contains("_sdl")
+                || filename == "i_main.c" {
                 continue;
             }
 

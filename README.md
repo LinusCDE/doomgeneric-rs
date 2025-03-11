@@ -12,9 +12,33 @@ This repo was originally started as [piston-doom](https://github.com/LinusCDE/pi
 
 ---
 
-This lib uses [doomgeneric](https://github.com/ozkl/doomgeneric) as a submodule. Therefore ensure this gets cloned as well or the build will fail.
+This lib uses [doomgeneric](https://github.com/ozkl/doomgeneric) as a submodule. If you clone this repo locally, make sure to also initialize that submodule. Otherwise building doomgeneric will fail!
 
-For more instructions and a running demo, see [piston-doom](https://github.com/LinusCDE/piston-doom).
+The basics are to create a struct that implements the trait `game::DoomGeneric` and pass it to `game::init(...)`. Afterwards you'll need to run `game::tick()` afterwards in a loop.
+
+This library does not support multiple instances. Running `game::init(...)` will pass your struct to the library and keeps it around forever (to use when doomgeneric c functions are called).
+
+A very basic, incomplete usage example:
+
+```rs
+struct MyDoomGame {
+  // Some fields, like channels to e.g. poll input from or send received framebuffers to
+}
+
+impl doomgeneric::game::DoomGeneric for MyDoomGame {
+ // Implement all required functions here, they are essentially events from doom
+}
+
+fn main() {
+  let my_game = MyDoomGame {};
+  doomgeneric::game::init(my_game);
+  loop {
+    doomgeneric::game::tick();
+  }
+}
+```
+
+For more detailed, see the readme of [piston-doom](https://github.com/LinusCDE/piston-doom) and its [main.rs](https://github.com/LinusCDE/piston-doom/blob/main/src/main.rs) for a full, yet short implementation of the above principles.
 
 ---
 

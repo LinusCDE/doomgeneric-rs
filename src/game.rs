@@ -1,15 +1,22 @@
 use crate::input::KeyData;
 use once_cell::sync::Lazy;
-use std::cell::RefCell;
 use std::convert::TryFrom;
-use std::ffi::CStr;
+use std::ffi::{CStr, CString};
 use std::os::raw;
+use std::ptr::addr_of_mut;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 
-/// The resolution is hardcoded in the underlying library as macro definitions.
-pub const DOOMGENERIC_RESX: usize = 640;
-pub const DOOMGENERIC_RESY: usize = 400;
+/// Resolution defined as overridable macros in the underlying C library.
+/// Override at build time via `DOOMGENERIC_RESX` / `DOOMGENERIC_RESY` env vars.
+pub const DOOMGENERIC_RESX: usize = match usize::from_str_radix(env!("DOOMGENERIC_RESX"), 10) {
+    Ok(v) => v,
+    Err(_) => 640,
+};
+pub const DOOMGENERIC_RESY: usize = match usize::from_str_radix(env!("DOOMGENERIC_RESY"), 10) {
+    Ok(v) => v,
+    Err(_) => 400,
+};
 
 pub trait DoomGeneric {
     fn draw_frame(&mut self, screen_buffer: &[u32], xres: usize, yres: usize);
@@ -17,35 +24,21 @@ pub trait DoomGeneric {
     fn set_window_title(&mut self, title: &str);
 }
 
-// TODO: Migrate to doomgeneric_Create
-
 extern "C" {
-    fn D_DoomMain(); // doomgeneric.h
-    fn doomgeneric_Tick(); // doomgeneric.h
-    fn M_FindResponseFile(); // used in main of i_main.c
-    pub static mut myargc: raw::c_int;
-    pub static mut myargv: *mut *mut raw::c_char;
+    fn doomgeneric_Create(argc: raw::c_int, argv: *mut *mut raw::c_char);
+    fn doomgeneric_Tick();
+    static mut DG_ScreenBuffer: *mut u32;
 }
 
-#[no_mangle]
-static mut DG_ScreenBuffer: *const u32 = std::ptr::null();
-//static DG_ScreenBuffer: &[u32] = &[0u32; DOOMGENERIC_RESX * DOOMGENERIC_RESY];
-static mut SCREEN_BUFFER: RefCell<Option<Box<[u32]>>> = RefCell::new(None);
-static mut DOOM_HANDLER: RefCell<Option<Box<dyn DoomGeneric>>> = RefCell::new(None);
+static mut DOOM_HANDLER: Option<Box<dyn DoomGeneric>> = None;
 static START_TIME: Lazy<Instant> = Lazy::new(|| Instant::now());
 
 #[no_mangle]
-extern "C" fn DG_Init() {
-    unsafe {
-        *SCREEN_BUFFER.get_mut() = Some(Box::new([0u32; DOOMGENERIC_RESX * DOOMGENERIC_RESY]));
-        // Setting DG_ScreenBuffer to where the new buffer is
-        DG_ScreenBuffer = SCREEN_BUFFER.get_mut().as_ref().unwrap().as_ptr();
-    }
-}
+extern "C" fn DG_Init() {}
 
 #[no_mangle]
 extern "C" fn DG_GetKey(pressed: *mut raw::c_int, key: *mut raw::c_uchar) -> raw::c_int {
-    if let Some(doom_box) = unsafe { DOOM_HANDLER.get_mut().as_mut() } {
+    if let Some(doom_box) = unsafe { (*addr_of_mut!(DOOM_HANDLER)).as_mut() } {
         if let Some(keydata) = doom_box.get_key() {
             unsafe {
                 // Not tested yet!
@@ -74,9 +67,13 @@ extern "C" fn DG_SleepMs(ms: u32) {
 
 #[no_mangle]
 extern "C" fn DG_DrawFrame() {
-    if let Some(doom_box) = unsafe { DOOM_HANDLER.get_mut() }.as_mut() {
-        if let Some(screen_buffer) = unsafe { SCREEN_BUFFER.get_mut() }.as_mut() {
-            doom_box.draw_frame(screen_buffer, DOOMGENERIC_RESX, DOOMGENERIC_RESY);
+    if let Some(doom_box) = unsafe { (*addr_of_mut!(DOOM_HANDLER)).as_mut() } {
+        let buf = unsafe { DG_ScreenBuffer };
+        if !buf.is_null() {
+            let slice = unsafe {
+                std::slice::from_raw_parts(buf, DOOMGENERIC_RESX * DOOMGENERIC_RESY)
+            };
+            doom_box.draw_frame(slice, DOOMGENERIC_RESX, DOOMGENERIC_RESY);
         }
     }
 }
@@ -86,18 +83,29 @@ extern "C" fn DG_SetWindowTitle(title: *const raw::c_char) {
     let title = unsafe { CStr::from_ptr(title) }
         .to_str()
         .expect("Can't convert title c string to rust string");
-    if let Some(doom_box) = unsafe { DOOM_HANDLER.get_mut() }.as_mut() {
+    if let Some(doom_box) = unsafe { (*addr_of_mut!(DOOM_HANDLER)).as_mut() } {
         doom_box.set_window_title(title);
     }
 }
 
-pub fn init(doom_impl: impl DoomGeneric + 'static) {
-    unsafe {
-        *DOOM_HANDLER.get_mut() = Some(Box::new(doom_impl));
+pub fn init<S: AsRef<str>>(args: &[S], doom_impl: impl DoomGeneric + 'static) {
+    let cstrings: Vec<CString> = args
+        .iter()
+        .map(|s| CString::new(s.as_ref()).expect("argv contains nul byte"))
+        .collect();
+    let mut argv_ptrs: Vec<*mut raw::c_char> = cstrings
+        .iter()
+        .map(|cs| cs.as_ptr() as *mut raw::c_char)
+        .collect();
+    argv_ptrs.push(std::ptr::null_mut());
+    let argc = cstrings.len() as raw::c_int;
+    let argv = argv_ptrs.as_mut_ptr();
+    std::mem::forget(cstrings);
+    std::mem::forget(argv_ptrs);
 
-        M_FindResponseFile();
-        DG_Init();
-        D_DoomMain();
+    unsafe {
+        *addr_of_mut!(DOOM_HANDLER) = Some(Box::new(doom_impl));
+        doomgeneric_Create(argc, argv);
     }
 }
 

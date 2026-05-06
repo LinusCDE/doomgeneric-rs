@@ -31,7 +31,8 @@ impl doomgeneric::game::DoomGeneric for MyDoomGame {
 
 fn main() {
   let my_game = MyDoomGame {};
-  doomgeneric::game::init(my_game);
+  let args: Vec<String> = std::env::args().collect();
+  doomgeneric::game::init(&args, my_game);
   loop {
     doomgeneric::game::tick();
   }
@@ -42,7 +43,22 @@ For more detailed, see the readme of [piston-doom](https://github.com/LinusCDE/p
 
 ---
 
-TODO:
+## CLI flags (e.g. `-iwad`)
 
-- Setting `myargv` and `myargc` to support the `-iwad`-flag: You need to the file named in a default way for now. The console will show you all the names
-- Support other resolutions. Not sure if this is possible without forking doomgeneric.
+`init` takes a slice of args passed straight to `doomgeneric_Create`, so doom's normal CLI flags work:
+
+```rs
+doomgeneric::game::init(&["doom", "-iwad", "/path/to/DOOM1.WAD"], my_game);
+```
+
+By convention, `argv[0]` is the program name.
+
+## Custom resolution
+
+Default is 640x400. Override at build time via env vars (consumed by `build.rs` and forwarded to the C compiler as `-DDOOMGENERIC_RESX=...`):
+
+```sh
+DOOMGENERIC_RESX=320 DOOMGENERIC_RESY=200 cargo build
+```
+
+Doom's renderer targets 320x200 internally and scales 2x; multiples of 320x200 (320x200, 640x400, 960x600) render most cleanly. Other sizes may show HUD/status-bar artifacts.

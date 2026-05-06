@@ -18,7 +18,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             if filename.starts_with("doomgeneric_")
                 || filename.contains("_allegro")
                 || filename.contains("_sdl")
-                || filename == "i_main.c" {
+                || filename == "i_main.c"
+                || filename == "doomdef.c"
+                || filename == "icon.c" {
                 continue;
             }
 
